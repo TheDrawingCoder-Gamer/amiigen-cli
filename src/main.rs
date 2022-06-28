@@ -92,8 +92,8 @@ fn main() -> std::io::Result<()> {
                 
         }
         AppArgs::Generate(GenerateArgs { key_file, da_rest: GenerateArgsNoKey {uid, id, output_file} }) => {
-            let good_id : [u8; 8] = amiigen::decode_hex(id.as_str()).expect("please enter valid id").try_into().expect("please enter valid id");
-            let good_uid = amiigen::decode_hex(uid.as_str()).expect("please enter valid tag uid");
+            let good_id : [u8; 8] = decode_hex(id.as_str()).expect("please enter valid id").try_into().expect("please enter valid id");
+            let good_uid = decode_hex(uid.as_str()).expect("please enter valid tag uid");
             let amiibo = amiigen::gen_amiibo(good_id, &good_uid)?;
 
             let key = amiitool_rs::load_keys(&key_file)?;
@@ -107,8 +107,8 @@ fn main() -> std::io::Result<()> {
             }
         }
         AppArgs::GenerateRaw(GenerateArgsNoKey {uid, id, output_file }) => {
-            let good_id : [u8; 8] = amiigen::decode_hex(id.as_str())?.try_into().map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "invalid id"))?;
-            let good_uid = amiigen::decode_hex(uid.as_str())?;
+            let good_id : [u8; 8] = decode_hex(id.as_str())?.try_into().map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "invalid id"))?;
+            let good_uid = decode_hex(uid.as_str())?;
             let amiibo = amiigen::gen_amiibo(good_id, &good_uid)?;
             if let Some(file) = output_file {
                 std::fs::write(file, amiibo)
@@ -119,4 +119,12 @@ fn main() -> std::io::Result<()> {
            }
         }
     }
+}
+
+fn decode_hex(s: &str) -> std::io::Result<Vec<u8>> {
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
+        .collect::<Result<Vec<u8>, std::num::ParseIntError>>()
+        .map_err(|x| std::io::Error::new(std::io::ErrorKind::InvalidData, x))
 }
