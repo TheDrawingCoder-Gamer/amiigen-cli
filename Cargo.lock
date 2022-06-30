@@ -49,18 +49,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "amiigen"
-version = "0.1.0"
-source = "git+https://github.com/TheDrawingCoder-Gamer/amiigen.git#7b1ea4b5aab38f9ab1a76fd9bf3f1ee04de6d54d"
-dependencies = [
- "rand",
-]
-
-[[package]]
 name = "amiigen-cli"
 version = "0.1.0"
 dependencies = [
- "amiigen",
  "amiitool-rs",
  "clap",
 ]
@@ -68,7 +59,7 @@ dependencies = [
 [[package]]
 name = "amiitool-rs"
 version = "0.1.0"
-source = "git+https://github.com/TheDrawingCoder-Gamer/amiitool-rs.git#0a71d9d7b052fe0acccf2cf8ceb161498d6976a2"
+source = "git+https://github.com/TheDrawingCoder-Gamer/amiitool-rs.git#cb8800c5edb96107d22be9d9d897867a5046c16b"
 dependencies = [
  "aead",
  "aes 0.8.1",
@@ -78,6 +69,7 @@ dependencies = [
  "digest",
  "generic-array",
  "hmac",
+ "rand",
  "sha2",
  "typenum",
 ]

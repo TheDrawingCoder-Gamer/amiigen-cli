@@ -1,6 +1,6 @@
-extern crate amiigen;
 
 use amiitool_rs;
+use amiitool_rs::AMIIBO_SIZE;
 use clap::{Parser, Args};
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -56,12 +56,12 @@ fn main() -> std::io::Result<()> {
             return Ok(());
            }
            let key = amiitool_rs::load_keys(&key_file).expect("invalid key");
-           let res = amiitool_rs::amiibo_pack(&key, data.try_into().expect("already checked length"))?;
+           let res = amiitool_rs::amiibo_pack(&key, data.as_slice().try_into().expect("already checked length"))?;
            if let Some(file) = output_file {
-             std::fs::write(file, res)
+             std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(res))
            } else {
              let mut stdout = std::io::stdout();
-             stdout.write(&res)?;
+             stdout.write(&<[u8; AMIIBO_SIZE]>::from(res))?;
              Ok(())
            }
         }
@@ -80,13 +80,13 @@ fn main() -> std::io::Result<()> {
             return Ok(());
            }
            let key = amiitool_rs::load_keys(&key_file)?;
-           let res = amiitool_rs::amiibo_unpack(&key, data.try_into().expect("already checked length"))?.get_checked()?;
+           let res = amiitool_rs::amiibo_unpack(&key, data.as_slice().try_into().expect("already checked length"))?.get_checked()?;
            if let Some(file) = output_file {
-             std::fs::write(file, res)
+             std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(res))
            } else {
              let mut stdout = std::io::stdout();
 
-             stdout.write(&res)?;
+             stdout.write(&<[u8; AMIIBO_SIZE]>::from(res))?;
              Ok(())
            }
                 
@@ -94,27 +94,26 @@ fn main() -> std::io::Result<()> {
         AppArgs::Generate(GenerateArgs { key_file, da_rest: GenerateArgsNoKey {uid, id, output_file} }) => {
             let good_id : [u8; 8] = decode_hex(id.as_str()).expect("please enter valid id").try_into().expect("please enter valid id");
             let good_uid = decode_hex(uid.as_str()).expect("please enter valid tag uid");
-            let amiibo = amiigen::gen_amiibo(good_id, &good_uid)?;
-
             let key = amiitool_rs::load_keys(&key_file)?;
-            let res = amiitool_rs::amiibo_pack(&key, amiibo)?;
+            let amiibo = amiitool_rs::gen_amiibo(&key, good_id, &good_uid)?;
+
             if let Some(file) = output_file {
-                std::fs::write(file, res)
+                std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(amiibo))
             } else {
                 let mut stdout = std::io::stdout();
-                stdout.write(&res)?;
+                stdout.write(&<[u8; AMIIBO_SIZE]>::from(amiibo))?;
                 Ok(())
             }
         }
         AppArgs::GenerateRaw(GenerateArgsNoKey {uid, id, output_file }) => {
             let good_id : [u8; 8] = decode_hex(id.as_str())?.try_into().map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "invalid id"))?;
             let good_uid = decode_hex(uid.as_str())?;
-            let amiibo = amiigen::gen_amiibo(good_id, &good_uid)?;
+            let amiibo = amiitool_rs::gen_amiibo_raw(good_id, &good_uid)?;
             if let Some(file) = output_file {
-                std::fs::write(file, amiibo)
+                std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(amiibo))
            } else {
              let mut stdout = std::io::stdout();
-             stdout.write(&amiibo)?;
+             stdout.write(&<[u8; AMIIBO_SIZE]>::from(amiibo))?;
              Ok(())
            }
         }
@@ -127,4 +126,5 @@ fn decode_hex(s: &str) -> std::io::Result<Vec<u8>> {
         .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
         .collect::<Result<Vec<u8>, std::num::ParseIntError>>()
         .map_err(|x| std::io::Error::new(std::io::ErrorKind::InvalidData, x))
+
 }
