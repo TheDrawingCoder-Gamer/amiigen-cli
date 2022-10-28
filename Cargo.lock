@@ -59,7 +59,6 @@ dependencies = [
 [[package]]
 name = "amiitool-rs"
 version = "0.1.0"
-source = "git+https://github.com/TheDrawingCoder-Gamer/amiitool-rs.git#cb8800c5edb96107d22be9d9d897867a5046c16b"
 dependencies = [
  "aead",
  "aes 0.8.1",

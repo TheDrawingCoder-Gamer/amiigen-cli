@@ -6,7 +6,7 @@ use clap::{Parser, Args};
 #[clap(author, version, about, long_about = None)]
 enum AppArgs {
     Encrypt(InputOutputArgs),
-    Decrypt(InputOutputArgs),
+    Decrypt(DecryptArgs),
     Generate(GenerateArgs),
     GenerateRaw(GenerateArgsNoKey)
 }
@@ -19,6 +19,13 @@ struct InputOutputArgs {
     #[clap(short, value_parser)]
     output_file: Option<String>,
 
+}
+#[derive(Args, Clone, Debug)]
+struct DecryptArgs {
+    #[clap(short, takes_value = false)]
+    leinent : bool,
+    #[clap(flatten)]
+    da_rest : InputOutputArgs
 }
 #[derive(Args, Clone, Debug)]
 struct GenerateArgs {
@@ -51,12 +58,12 @@ fn main() -> std::io::Result<()> {
                  stdin.read_to_end(&mut data)?;
                  Ok(data)
                }?;
-           if data.len() != 540 {
+           if data.len() < 540 {
             println!("not a valid amiibo file");
             return Ok(());
            }
            let key = amiitool_rs::load_keys(&key_file).expect("invalid key");
-           let res = amiitool_rs::amiibo_pack(&key, data.as_slice().try_into().expect("already checked length"))?;
+           let res = amiitool_rs::amiibo_pack(&key, data.as_slice()[..540].try_into().expect("took 540"))?;
            if let Some(file) = output_file {
              std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(res))
            } else {
@@ -65,7 +72,7 @@ fn main() -> std::io::Result<()> {
              Ok(())
            }
         }
-        AppArgs::Decrypt(InputOutputArgs { key_file, input_file, output_file}) => {
+        AppArgs::Decrypt(DecryptArgs { leinent, da_rest: InputOutputArgs { key_file, input_file, output_file}} ) => {
            let data = 
                if let Some(file) = input_file {
                  std::fs::read(file)
@@ -75,12 +82,22 @@ fn main() -> std::io::Result<()> {
                  stdin.read_to_end(&mut data)?;
                  Ok(data)
                 }?; 
-           if data.len() != 540 {
+           if data.len() < 540 {
             println!("not a valid amiibo file");
             return Ok(());
            }
            let key = amiitool_rs::load_keys(&key_file)?;
-           let res = amiitool_rs::amiibo_unpack(&key, data.as_slice().try_into().expect("already checked length"))?.get_checked()?;
+           let ares = amiitool_rs::amiibo_unpack(&key, data.as_slice()[..540].try_into().expect("took 540"))?;
+           let res = 
+               if leinent {
+                    if !ares.is_valid() {
+                        eprintln!("WARNING: Invalid Signature!");
+                    }
+                    ares.get_unchecked()
+               } else {
+                    ares.get_checked()?
+               };
+
            if let Some(file) = output_file {
              std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(res))
            } else {
@@ -96,7 +113,7 @@ fn main() -> std::io::Result<()> {
             let good_uid = decode_hex(uid.as_str()).expect("please enter valid tag uid");
             let key = amiitool_rs::load_keys(&key_file)?;
             let amiibo = amiitool_rs::gen_amiibo(&key, good_id, &good_uid)?;
-
+            
             if let Some(file) = output_file {
                 std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(amiibo))
             } else {
