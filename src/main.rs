@@ -1,6 +1,5 @@
 
-use amiitool_rs;
-use amiitool_rs::AMIIBO_SIZE;
+use amiitool_rs::{AMIIBO_SIZE, PlainAmiibo, PackedAmiibo};
 use clap::{Parser, Args};
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -63,7 +62,7 @@ fn main() -> std::io::Result<()> {
             return Ok(());
            }
            let key = amiitool_rs::load_keys(&key_file).expect("invalid key");
-           let res = amiitool_rs::amiibo_pack(&key, data.as_slice()[..540].try_into().expect("took 540"))?;
+           let res = PlainAmiibo::pack(data.as_slice()[..540].try_into().expect("took 540"), &key)?;
            if let Some(file) = output_file {
              std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(res))
            } else {
@@ -87,7 +86,7 @@ fn main() -> std::io::Result<()> {
             return Ok(());
            }
            let key = amiitool_rs::load_keys(&key_file)?;
-           let ares = amiitool_rs::amiibo_unpack(&key, data.as_slice()[..540].try_into().expect("took 540"))?;
+           let ares = PackedAmiibo::unpack(data.as_slice()[..540].try_into().expect("took 540"), &key)?;
            let res = 
                if leinent {
                     if !ares.is_valid() {
@@ -112,7 +111,7 @@ fn main() -> std::io::Result<()> {
             let good_id : [u8; 8] = decode_hex(id.as_str()).expect("please enter valid id").try_into().expect("please enter valid id");
             let good_uid = decode_hex(uid.as_str()).expect("please enter valid tag uid");
             let key = amiitool_rs::load_keys(&key_file)?;
-            let amiibo = amiitool_rs::gen_amiibo(&key, good_id, &good_uid)?;
+            let amiibo = PackedAmiibo::generate(good_id, &good_uid, &key)?;
             
             if let Some(file) = output_file {
                 std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(amiibo))
@@ -125,7 +124,7 @@ fn main() -> std::io::Result<()> {
         AppArgs::GenerateRaw(GenerateArgsNoKey {uid, id, output_file }) => {
             let good_id : [u8; 8] = decode_hex(id.as_str())?.try_into().map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "invalid id"))?;
             let good_uid = decode_hex(uid.as_str())?;
-            let amiibo = amiitool_rs::gen_amiibo_raw(good_id, &good_uid)?;
+            let amiibo = PlainAmiibo::generate(good_id, &good_uid)?;
             if let Some(file) = output_file {
                 std::fs::write(file, &<[u8; AMIIBO_SIZE]>::from(amiibo))
            } else {

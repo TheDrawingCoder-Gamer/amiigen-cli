@@ -58,7 +58,9 @@ dependencies = [
 
 [[package]]
 name = "amiitool-rs"
-version = "0.1.0"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d9d6c5dbdbcaa1066d6981edc1ababa77d17cc86d730cec9d6ee176f35df4ac"
 dependencies = [
  "aead",
  "aes 0.8.1",
