@@ -136,7 +136,8 @@ fn main() -> std::io::Result<()> {
     }
 }
 
-fn decode_hex(s: &str) -> std::io::Result<Vec<u8>> {
+fn decode_hex(raw: &str) -> std::io::Result<Vec<u8>> {
+    let s: &str = raw.trim_start_matches("0x");
     (0..s.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
